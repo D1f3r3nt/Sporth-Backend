@@ -196,6 +196,99 @@ exports.message_save = functions.https.onRequest(async (req, res) => {
     res.sendStatus(200);
 });
 
+// ==========
+// User
+// ==========
+
+exports.user_one = functions.https.onRequest(async (req, res) => {
+    const idUser = req.query.idUser;
+
+    const user = await getUser(idUser);
+
+    res.send(user);
+});
+
+exports.user_exists = functions.https.onRequest(async (req, res) => {
+    const idUser = req.query.idUser;
+    const userReference = admin.firestore().collection('users').doc(idUser);
+
+    const exists = await userReference.get().then(val => val.exists)
+
+    res.send(exists);
+});
+
+exports.username_exists = functions.https.onRequest(async (req, res) => {
+    const username = req.query.username;
+
+    const response = await admin.firestore()
+    .collection('users')
+    .where('username', '==', username)
+    .get()
+
+    const exists = response.docs.length != 0;
+
+    res.send(exists);
+});
+
+exports.user_save = functions.https.onRequest(async (req, res) => {
+    const user = req.body;
+    await admin.firestore().collection('users').doc().set(user);
+    res.sendStatus(200);
+});
+
+exports.user_update = functions.https.onRequest(async (req, res) => {
+    const user = JSON.parse(req.body);
+
+    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+    res.sendStatus(200);
+});
+
+exports.seguidor_upgrade = functions.https.onRequest(async (req, res) => {
+    const user = JSON.parse(req.body);
+    const idFollower = req.query.idFollower;
+
+    user.seguidos.push(idFollower);
+    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+
+    const otherBadUser = await getUser(idFollower);
+
+    const otherUser = JSON.parse(JSON.stringify(otherBadUser));
+
+    otherUser.seguidores.push(user.idUser);
+    await admin.firestore().collection('users').doc(otherUser.idUser).update(JSON.stringify(otherUser));
+
+
+    res.sendStatus(200);
+});
+
+exports.seguidor_degrade = functions.https.onRequest(async (req, res) => {
+    const user = JSON.parse(req.body);
+    const idFollower = req.query.idFollower;
+
+    user.seguidos = user.seguidos.filter(users => users != idFollower);
+    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+
+    const otherBadUser = await getUser(idFollower);
+
+    const otherUser = JSON.parse(JSON.stringify(otherBadUser));
+
+    otherUser.seguidos = otherUser.seguidos.filter(users => users != user.idUser);
+    await admin.firestore().collection('users').doc(otherUser.idUser).update(JSON.stringify(otherUser));
+
+
+    res.sendStatus(200);
+});
+
+exports.user_logro = functions.https.onRequest(async (req, res) => {
+    const user = JSON.parse(req.body);
+    const idLogro = req.query.idFollower;
+
+    user.logros.push(parseInt(idLogro));
+    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+
+    res.sendStatus(200);
+});
+
 async function getEvent(idEvent) {
     const documentReference = admin.firestore()
         .collection('eventos')
