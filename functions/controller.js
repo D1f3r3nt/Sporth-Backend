@@ -4,6 +4,10 @@ const functions = require("firebase-functions");
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+// ==========
+// Eventos
+// ==========
+
 exports.event_all = functions.https.onRequest(async (req, res) => {
     const result = await admin.firestore()
     .collection('eventos')
@@ -85,6 +89,110 @@ exports.event_inscribe = functions.https.onRequest(async (req, res) => {
     evento.participantes.push(idUser);
 
     await admin.firestore().collection('eventos').doc(idEvent).update(evento);
+    res.sendStatus(200);
+});
+
+// ==========
+// Chats
+// ==========
+
+exports.chat_all = functions.https.onRequest(async (req, res) => {
+    const result = await admin.firestore()
+    .collection('chats')
+    .get();
+
+    let chats = result.docs.map(res => JSON.parse(JSON.stringify(res.data())));
+
+    for (let i = 0; i < chats.length; i++) {
+        const chat = chats[i];
+
+        let anfitriones = [];
+        for (let j = 0; j < chat.anfitriones.length; j++) {
+            let anfitrion = chat.anfitriones[j];
+
+            anfitriones.push(await getUser(anfitrion));
+        }
+        chat.anfitriones = anfitriones;
+    }
+
+    res.send(chats);
+});
+
+exports.chat_by_event = functions.https.onRequest(async (req, res) => {
+    const idEvent = req.query.idEvent;
+
+    const result = await admin.firestore()
+    .collection('chats')
+    .where('idEvent', '==', idEvent)
+    .get();
+
+    let chats = result.docs.map(res => JSON.parse(JSON.stringify(res.data())));
+
+    for (let i = 0; i < chats.length; i++) {
+        const chat = chats[i];
+
+        let anfitriones = [];
+        for (let j = 0; j < chat.anfitriones.length; j++) {
+            let anfitrion = chat.anfitriones[j];
+
+            anfitriones.push(await getUser(anfitrion));
+        }
+        chat.anfitriones = anfitriones;
+    }
+
+    res.send(chats);
+});
+
+exports.message_by_chat = functions.https.onRequest(async (req, res) => {
+    const idChat = req.query.idChat;
+
+    const response = await admin.firestore()
+    .collection(`chats/${idChat}/mensajes`)
+    .get();
+
+    let mensajes = response.docs.map(res => JSON.parse(JSON.stringify(res.data())));
+
+    for (let i = 0; i < mensajes.length; i++) {
+        const mensaje = mensajes[i];
+        
+        mensaje.editor = await getUser(mensaje.editor);
+    }
+
+    res.send(mensajes);
+});
+
+exports.any_chat_user = functions.https.onRequest(async (req, res) => {
+    const idUser = req.query.idUser;
+    const idOtherUser = req.query.idOtherUser;
+
+    const result = await admin.firestore()
+    .collection('chats')
+    .where('anfitriones', 'array-contains-any', [idUser, idOtherUser])
+    .where('idEvent', '==', null)
+    .get();
+
+    res.send(result.docs.length == 0. ? '' : result.docs.first.id);
+});
+
+exports.chat_save = functions.https.onRequest(async (req, res) => {
+    const chat = req.body;
+    await admin.firestore().collection('chats').doc().set(chat);
+    res.sendStatus(200);
+});
+
+exports.chat_update = functions.https.onRequest(async (req, res) => {
+    const chat = req.body;
+    const idChat = req.query.idChat;
+
+    await admin.firestore().collection('chats').doc(idChat).update(chat);
+    res.sendStatus(200);
+});
+
+exports.message_save = functions.https.onRequest(async (req, res) => {
+    const message = req.body;
+    const idChat = req.query.idChat;
+
+    await admin.firestore().collection(`chats/${idChat}/mensajes`).doc().set(message);
     res.sendStatus(200);
 });
 
