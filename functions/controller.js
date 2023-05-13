@@ -1,7 +1,7 @@
 // Cloud Function
 const functions = require("firebase-functions");
 // The Firebase Admin SDK to access Firestore.
-const admin = require('firebase-admin');
+const admin = require("firebase-admin");
 admin.initializeApp();
 
 // ==========
@@ -10,7 +10,7 @@ admin.initializeApp();
 
 exports.event_all = functions.https.onRequest(async (req, res) => {
     const result = await admin.firestore()
-    .collection('eventos')
+    .collection("eventos")
     .get();
 
     let eventos = result.docs.map(res => JSON.parse(JSON.stringify(res.data())));
@@ -53,8 +53,8 @@ exports.events_by_anfitrion = functions.https.onRequest(async (req, res) => {
     const idAnfitrion = req.query.idAnfitrion;
 
     const result = await admin.firestore()
-    .collection('eventos')
-    .where('anfitrion', '==', idAnfitrion)
+    .collection("eventos")
+    .where("anfitrion", "==", idAnfitrion)
     .get();
 
     let eventos = result.docs.map(res => JSON.parse(JSON.stringify(res.data())));
@@ -77,7 +77,7 @@ exports.events_by_anfitrion = functions.https.onRequest(async (req, res) => {
 
 exports.event_save = functions.https.onRequest(async (req, res) => {
     const evento = req.body;
-    await admin.firestore().collection('eventos').doc().set(evento);
+    await admin.firestore().collection("eventos").doc().set(evento);
     res.sendStatus(200);
 });
 
@@ -88,7 +88,7 @@ exports.event_inscribe = functions.https.onRequest(async (req, res) => {
     const evento = await getEvent(idEvent);
     evento.participantes.push(idUser);
 
-    await admin.firestore().collection('eventos').doc(idEvent).update(evento);
+    await admin.firestore().collection("eventos").doc(idEvent).update(evento);
     res.sendStatus(200);
 });
 
@@ -98,7 +98,7 @@ exports.event_inscribe = functions.https.onRequest(async (req, res) => {
 
 exports.chat_all = functions.https.onRequest(async (req, res) => {
     const result = await admin.firestore()
-    .collection('chats')
+    .collection("chats")
     .get();
 
     let chats = result.docs.map(res => JSON.parse(JSON.stringify(res.data())));
@@ -122,8 +122,8 @@ exports.chat_by_event = functions.https.onRequest(async (req, res) => {
     const idEvent = req.query.idEvent;
 
     const result = await admin.firestore()
-    .collection('chats')
-    .where('idEvent', '==', idEvent)
+    .collection("chats")
+    .where("idEvent", "==", idEvent)
     .get();
 
     let chats = result.docs.map(res => JSON.parse(JSON.stringify(res.data())));
@@ -166,17 +166,17 @@ exports.any_chat_user = functions.https.onRequest(async (req, res) => {
     const idOtherUser = req.query.idOtherUser;
 
     const result = await admin.firestore()
-    .collection('chats')
-    .where('anfitriones', 'array-contains-any', [idUser, idOtherUser])
-    .where('idEvent', '==', null)
+    .collection("chats")
+    .where("anfitriones", "array-contains-any", [idUser, idOtherUser])
+    .where("idEvent", "==", null)
     .get();
 
-    res.send(result.docs.length == 0. ? '' : result.docs.first.id);
+    res.send(result.docs.length == 0. ? "" : result.docs.first.id);
 });
 
 exports.chat_save = functions.https.onRequest(async (req, res) => {
     const chat = req.body;
-    await admin.firestore().collection('chats').doc().set(chat);
+    await admin.firestore().collection("chats").doc().set(chat);
     res.sendStatus(200);
 });
 
@@ -184,7 +184,7 @@ exports.chat_update = functions.https.onRequest(async (req, res) => {
     const chat = req.body;
     const idChat = req.query.idChat;
 
-    await admin.firestore().collection('chats').doc(idChat).update(chat);
+    await admin.firestore().collection("chats").doc(idChat).update(chat);
     res.sendStatus(200);
 });
 
@@ -210,7 +210,7 @@ exports.user_one = functions.https.onRequest(async (req, res) => {
 
 exports.user_exists = functions.https.onRequest(async (req, res) => {
     const idUser = req.query.idUser;
-    const userReference = admin.firestore().collection('users').doc(idUser);
+    const userReference = admin.firestore().collection("users").doc(idUser);
 
     const exists = await userReference.get().then(val => val.exists)
 
@@ -221,8 +221,8 @@ exports.username_exists = functions.https.onRequest(async (req, res) => {
     const username = req.query.username;
 
     const response = await admin.firestore()
-    .collection('users')
-    .where('username', '==', username)
+    .collection("users")
+    .where("username", "==", username)
     .get()
 
     const exists = response.docs.length != 0;
@@ -232,14 +232,14 @@ exports.username_exists = functions.https.onRequest(async (req, res) => {
 
 exports.user_save = functions.https.onRequest(async (req, res) => {
     const user = req.body;
-    await admin.firestore().collection('users').doc().set(user);
+    await admin.firestore().collection("users").doc().set(user);
     res.sendStatus(200);
 });
 
 exports.user_update = functions.https.onRequest(async (req, res) => {
     const user = JSON.parse(req.body);
 
-    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+    await admin.firestore().collection("users").doc(user.idUser).update(JSON.stringify(user));
     res.sendStatus(200);
 });
 
@@ -248,14 +248,14 @@ exports.seguidor_upgrade = functions.https.onRequest(async (req, res) => {
     const idFollower = req.query.idFollower;
 
     user.seguidos.push(idFollower);
-    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+    await admin.firestore().collection("users").doc(user.idUser).update(JSON.stringify(user));
 
     const otherBadUser = await getUser(idFollower);
 
     const otherUser = JSON.parse(JSON.stringify(otherBadUser));
 
     otherUser.seguidores.push(user.idUser);
-    await admin.firestore().collection('users').doc(otherUser.idUser).update(JSON.stringify(otherUser));
+    await admin.firestore().collection("users").doc(otherUser.idUser).update(JSON.stringify(otherUser));
 
 
     res.sendStatus(200);
@@ -266,14 +266,14 @@ exports.seguidor_degrade = functions.https.onRequest(async (req, res) => {
     const idFollower = req.query.idFollower;
 
     user.seguidos = user.seguidos.filter(users => users != idFollower);
-    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+    await admin.firestore().collection("users").doc(user.idUser).update(JSON.stringify(user));
 
     const otherBadUser = await getUser(idFollower);
 
     const otherUser = JSON.parse(JSON.stringify(otherBadUser));
 
     otherUser.seguidos = otherUser.seguidos.filter(users => users != user.idUser);
-    await admin.firestore().collection('users').doc(otherUser.idUser).update(JSON.stringify(otherUser));
+    await admin.firestore().collection("users").doc(otherUser.idUser).update(JSON.stringify(otherUser));
 
 
     res.sendStatus(200);
@@ -284,14 +284,14 @@ exports.user_logro = functions.https.onRequest(async (req, res) => {
     const idLogro = req.query.idFollower;
 
     user.logros.push(parseInt(idLogro));
-    await admin.firestore().collection('users').doc(user.idUser).update(JSON.stringify(user));
+    await admin.firestore().collection("users").doc(user.idUser).update(JSON.stringify(user));
 
     res.sendStatus(200);
 });
 
 async function getEvent(idEvent) {
     const documentReference = admin.firestore()
-        .collection('eventos')
+        .collection("eventos")
         .doc(idEvent);
 
     let evento = await documentReference.get().then(res => JSON.parse(JSON.stringify(res.data())));
@@ -301,7 +301,7 @@ async function getEvent(idEvent) {
 
 function getUser(idUser) {
     return admin.firestore()
-        .collection('users')
+        .collection("users")
         .doc(idUser)
         .get()
         .then(val => val.data());
