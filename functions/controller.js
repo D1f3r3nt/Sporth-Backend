@@ -329,7 +329,7 @@ exports.user_logro = functions.https.onRequest(async (req, res) => {
 });
 
 exports.maintenceEvents = functions.pubsub
-    .schedule("every day 19:38")
+    .schedule("every day 21:20")
     .timeZone("Europe/Madrid")
     .onRun(async (context) => {
       functions.logger.log("Check events");
@@ -340,6 +340,7 @@ exports.maintenceEvents = functions.pubsub
       const eventos = result.docs.map((res) => {
         const element = JSON.parse(JSON.stringify(res.data()));
         element.ref = res.ref;
+        element.id = res.id;
         return element;
       });
 
@@ -358,6 +359,24 @@ exports.maintenceEvents = functions.pubsub
       const batch = admin.firestore().batch();
       for (let i = 0; i < eliminados.length; i++) {
         const eliminar = eliminados[i];
+
+        const result = await admin
+            .firestore()
+            .collection("chats")
+            .where("idEvent", "==", eliminar.id)
+            .get();
+
+        functions.logger.log(`Chats eliminados ${result.docs.length}`);
+
+        result.docs.map((res) => {
+          batch.delete(res.ref);
+          const collection = admin
+              .firestore()
+              .collection(`chats/${res.id}/mensajes`);
+
+          collection.get()
+              .then((val) => val.docs.map((rid) => rid.ref.delete()));
+        });
 
         batch.delete(eliminar.ref);
       }
