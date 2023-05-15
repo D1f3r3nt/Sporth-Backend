@@ -80,7 +80,10 @@ exports.events_by_anfitrion = functions.https.onRequest(async (req, res) => {
 
 exports.event_save = functions.https.onRequest(async (req, res) => {
   const evento = req.body;
-  await admin.firestore().collection("eventos").doc().set(evento);
+  const docRef = admin.firestore().collection("eventos").doc();
+  evento.id = docRef.id;
+
+  await docRef.set(evento);
   res.sendStatus(200);
 });
 
@@ -186,7 +189,10 @@ exports.any_chat_user = functions.https.onRequest(async (req, res) => {
 
 exports.chat_save = functions.https.onRequest(async (req, res) => {
   const chat = req.body;
-  await admin.firestore().collection("chats").doc().set(chat);
+  const docRef = admin.firestore().collection("chats").doc();
+  chat.idChat = docRef.id;
+
+  await docRef.set(chat);
   res.sendStatus(200);
 });
 
@@ -247,7 +253,7 @@ exports.username_exists = functions.https.onRequest(async (req, res) => {
 
 exports.user_save = functions.https.onRequest(async (req, res) => {
   const user = req.body;
-  await admin.firestore().collection("users").doc().set(user);
+  await admin.firestore().collection("users").doc(user.idUser).set(user);
   res.sendStatus(200);
 });
 
@@ -316,7 +322,7 @@ exports.seguidor_degrade = functions.https.onRequest(async (req, res) => {
 
 exports.user_logro = functions.https.onRequest(async (req, res) => {
   const user = JSON.parse(req.body);
-  const idLogro = req.query.idFollower;
+  const idLogro = req.query.idLogro;
 
   user.logros.push(parseInt(idLogro));
   await admin
@@ -329,7 +335,7 @@ exports.user_logro = functions.https.onRequest(async (req, res) => {
 });
 
 exports.maintenceEvents = functions.pubsub
-    .schedule("every day 21:20")
+    .schedule("every day 23:55")
     .timeZone("Europe/Madrid")
     .onRun(async (context) => {
       functions.logger.log("Check events");
