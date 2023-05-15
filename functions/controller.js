@@ -152,27 +152,6 @@ exports.chat_by_event = functions.https.onRequest(async (req, res) => {
   res.send(chats);
 });
 
-exports.message_by_chat = functions.https.onRequest(async (req, res) => {
-  const idChat = req.query.idChat;
-
-  const response = await admin
-      .firestore()
-      .collection(`chats/${idChat}/mensajes`)
-      .get();
-
-  const mensajes = response.docs.map((res) =>
-    JSON.parse(JSON.stringify(res.data())),
-  );
-
-  for (let i = 0; i < mensajes.length; i++) {
-    const mensaje = mensajes[i];
-
-    mensaje.editor = await getUser(mensaje.editor);
-  }
-
-  res.send(mensajes);
-});
-
 exports.any_chat_user = functions.https.onRequest(async (req, res) => {
   const idUser = req.query.idUser;
   const idOtherUser = req.query.idOtherUser;
@@ -180,11 +159,13 @@ exports.any_chat_user = functions.https.onRequest(async (req, res) => {
   const result = await admin
       .firestore()
       .collection("chats")
-      .where("anfitriones", "array-contains-any", [idUser, idOtherUser])
+      .where("anfitriones", "array-contains", [idUser, idOtherUser])
       .where("idEvent", "==", null)
       .get();
 
-  res.send(result.docs.length == 0 ? "" : result.docs.first.id);
+  functions.logger.log(result.docs.length == 0);
+
+  res.send(result.docs.length == 0 ? "" : result.docs[0].id);
 });
 
 exports.chat_save = functions.https.onRequest(async (req, res) => {
