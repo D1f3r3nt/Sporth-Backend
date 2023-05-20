@@ -79,7 +79,7 @@ exports.events_by_anfitrion = functions.https.onRequest(async (req, res) => {
 });
 
 exports.event_save = functions.https.onRequest(async (req, res) => {
-  const evento = req.body;
+  const evento = JSON.parse(req.body);
   const docRef = admin.firestore().collection("eventos").doc();
   evento.id = docRef.id;
 
@@ -169,7 +169,7 @@ exports.any_chat_user = functions.https.onRequest(async (req, res) => {
 });
 
 exports.chat_save = functions.https.onRequest(async (req, res) => {
-  const chat = req.body;
+  const chat = JSON.parse(req.body);
   const docRef = admin.firestore().collection("chats").doc();
   chat.idChat = docRef.id;
 
@@ -178,7 +178,7 @@ exports.chat_save = functions.https.onRequest(async (req, res) => {
 });
 
 exports.chat_update = functions.https.onRequest(async (req, res) => {
-  const chat = req.body;
+  const chat = JSON.parse(req.body);
   const idChat = req.query.idChat;
 
   await admin.firestore().collection("chats").doc(idChat).update(chat);
@@ -186,7 +186,7 @@ exports.chat_update = functions.https.onRequest(async (req, res) => {
 });
 
 exports.message_save = functions.https.onRequest(async (req, res) => {
-  const message = req.body;
+  const message = JSON.parse(req.body);
   const idChat = req.query.idChat;
 
   await admin
@@ -233,7 +233,7 @@ exports.username_exists = functions.https.onRequest(async (req, res) => {
 });
 
 exports.user_save = functions.https.onRequest(async (req, res) => {
-  const user = req.body;
+  const user = JSON.parse(req.body);
   await admin.firestore().collection("users").doc(user.idUser).set(user);
   res.sendStatus(200);
 });
