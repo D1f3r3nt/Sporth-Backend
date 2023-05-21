@@ -11,9 +11,13 @@ admin.initializeApp();
 exports.event_all = functions.https.onRequest(async (req, res) => {
   const result = await admin.firestore().collection("eventos").get();
 
-  const eventos = result.docs.map((res) =>
+  let eventos = result.docs.map((res) =>
     JSON.parse(JSON.stringify(res.data())),
   );
+
+  eventos = eventos
+      .filter((evento) => parseInt(evento.maximo) >
+      (evento.participantes.length + 1));
 
   for (let i = 0; i < eventos.length; i++) {
     const evento = eventos[i];
@@ -245,7 +249,7 @@ exports.user_update = functions.https.onRequest(async (req, res) => {
       .firestore()
       .collection("users")
       .doc(user.idUser)
-      .update(JSON.stringify(user));
+      .update(user);
   res.sendStatus(200);
 });
 
@@ -258,7 +262,7 @@ exports.seguidor_upgrade = functions.https.onRequest(async (req, res) => {
       .firestore()
       .collection("users")
       .doc(user.idUser)
-      .update(JSON.stringify(user));
+      .update(user);
 
   const otherBadUser = await getUser(idFollower);
 
@@ -269,7 +273,7 @@ exports.seguidor_upgrade = functions.https.onRequest(async (req, res) => {
       .firestore()
       .collection("users")
       .doc(otherUser.idUser)
-      .update(JSON.stringify(otherUser));
+      .update(otherUser);
 
   res.sendStatus(200);
 });
@@ -283,7 +287,7 @@ exports.seguidor_degrade = functions.https.onRequest(async (req, res) => {
       .firestore()
       .collection("users")
       .doc(user.idUser)
-      .update(JSON.stringify(user));
+      .update(user);
 
   const otherBadUser = await getUser(idFollower);
 
@@ -296,7 +300,7 @@ exports.seguidor_degrade = functions.https.onRequest(async (req, res) => {
       .firestore()
       .collection("users")
       .doc(otherUser.idUser)
-      .update(JSON.stringify(otherUser));
+      .update(otherUser);
 
   res.sendStatus(200);
 });
@@ -310,7 +314,7 @@ exports.user_logro = functions.https.onRequest(async (req, res) => {
       .firestore()
       .collection("users")
       .doc(user.idUser)
-      .update(JSON.stringify(user));
+      .update(user);
 
   res.sendStatus(200);
 });
