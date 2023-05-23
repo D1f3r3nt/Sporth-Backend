@@ -102,6 +102,18 @@ exports.event_inscribe = functions.https.onRequest(async (req, res) => {
   res.sendStatus(200);
 });
 
+exports.event_uninscribe = functions.https.onRequest(async (req, res) => {
+  const idEvent = req.query.idEvent;
+  const idUser = req.query.idUser;
+
+  const evento = await getEvent(idEvent);
+  evento.participantes = evento.participantes
+      .filter((idParticipantes) => idParticipantes != idUser);
+
+  await admin.firestore().collection("eventos").doc(idEvent).update(evento);
+  res.sendStatus(200);
+});
+
 // ==========
 // Chats
 // ==========
