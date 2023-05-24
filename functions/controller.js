@@ -82,6 +82,35 @@ exports.events_by_anfitrion = functions.https.onRequest(async (req, res) => {
   res.send(eventos);
 });
 
+exports.events_by_participante = functions.https.onRequest(async (req, res) => {
+  const idUser = req.query.idUser;
+
+  const result = await admin
+      .firestore()
+      .collection("eventos")
+      .where("participantes", "array-contains-any", [idUser])
+      .get();
+
+  const eventos = result.docs.map((res) =>
+    JSON.parse(JSON.stringify(res.data())),
+  );
+
+  for (let i = 0; i < eventos.length; i++) {
+    const evento = eventos[i];
+    evento.anfitrion = await getUser(evento.anfitrion);
+
+    const participantes = [];
+    for (let j = 0; j < evento.participantes.length; j++) {
+      const participante = evento.participantes[j];
+
+      participantes.push(await getUser(participante));
+    }
+    evento.participantes = participantes;
+  }
+
+  res.send(eventos);
+});
+
 exports.event_save = functions.https.onRequest(async (req, res) => {
   const evento = JSON.parse(req.body);
   const docRef = admin.firestore().collection("eventos").doc();
