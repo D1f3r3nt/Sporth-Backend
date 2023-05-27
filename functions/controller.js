@@ -194,7 +194,7 @@ exports.chat_by_event = functions.https.onRequest(async (req, res) => {
     chat.anfitriones = anfitriones;
   }
 
-  res.send(chats);
+  res.send(chats[0]);
 });
 
 exports.any_chat_user = functions.https.onRequest(async (req, res) => {
@@ -219,7 +219,7 @@ exports.chat_save = functions.https.onRequest(async (req, res) => {
   chat.idChat = docRef.id;
 
   await docRef.set(chat);
-  res.sendStatus(200);
+  res.send(docRef.id);
 });
 
 exports.chat_update = functions.https.onRequest(async (req, res) => {
