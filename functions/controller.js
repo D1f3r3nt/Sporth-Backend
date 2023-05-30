@@ -2,6 +2,12 @@
 const functions = require("firebase-functions");
 // The Firebase Admin SDK to access Firestore.
 const admin = require("firebase-admin");
+// Redis for cache
+const {createClient} = require("redis");
+// The Firebase Storage
+const {Storage} = require("@google-cloud/storage");
+
+const storage = new Storage();
 admin.initializeApp();
 
 // ==========
@@ -361,7 +367,7 @@ exports.user_logro = functions.https.onRequest(async (req, res) => {
 });
 
 exports.maintenceEvents = functions.pubsub
-    .schedule("every day 23:55")
+    .schedule("every day 23:58")
     .timeZone("Europe/Madrid")
     .onRun(async (context) => {
       functions.logger.log("Check events");
@@ -376,8 +382,6 @@ exports.maintenceEvents = functions.pubsub
         return element;
       });
 
-      functions.logger.log(`Eventos ${eventos.length}`);
-
       const eliminados = eventos.filter((evento) => {
         const fechaString = evento.dia;
         const partesFecha = fechaString.split("/");
@@ -391,6 +395,24 @@ exports.maintenceEvents = functions.pubsub
       const batch = admin.firestore().batch();
       for (let i = 0; i < eliminados.length; i++) {
         const eliminar = eliminados[i];
+
+        if (eliminar.imagen.includes("firebasestorage")) {
+          const url = eliminar.imagen;
+          const bucketName = "gs://sporth-c3c47.appspot.com";
+          const valuesPath =
+          decodeURIComponent(url.match(/\/o\/(.+)/)[1]).split("/");
+
+          const value = valuesPath[1].split("?")[0];
+
+          const filePath = "images_events/" + value;
+
+          // Obtén una referencia al archivo en Firebase Storage
+          const bucket = storage.bucket(bucketName);
+          const file = bucket.file(filePath);
+
+          // Borra el archivo
+          await file.delete();
+        }
 
         const result = await admin
             .firestore()
@@ -433,13 +455,59 @@ async function getEvent(idEvent) {
   return evento;
 }
 
+// Pasword ;>5p+a^7-GSTaNm
+
+/**
+ * Funcion para recoger un unico usuario
+ * @param {string} idUser
+ * @return {Object} Devuelve un usuario
+ */
+async function getUser(idUser) {
+  const redisClient = createClient({
+    username: "sporth-back",
+    password: ";>5p+a^7-GSTaNm",
+    socket: {
+      host: "redis-13201.c61.us-east-1-3.ec2.cloud.redislabs.com",
+      port: 13201,
+    },
+  });
+
+  let result;
+
+  // On error in redis
+  redisClient.on("error", (err) =>
+    functions.logger.log(`Error al obtener resultados de la caché: ${err}`));
+
+  // Initialize redis
+  await redisClient.connect();
+
+  // Verificar si los resultados están en caché
+  const cachedResults = await redisClient.get(idUser);
+
+  if (cachedResults) {
+    // Resultados de la caché
+    result = cachedResults;
+  } else {
+    // Realizar operación o consulta costosa
+    const results = await getUserWithoutCache(idUser);
+
+    // Caché por un tiempo determinado, 5 minutos
+    await redisClient.set(idUser, JSON.stringify(results));
+    await redisClient.expireAt(idUser, parseInt((Date.now())/1000) + 300);
+
+    result = results;
+  }
+
+  return JSON.parse(result);
+}
+
 /**
  * Funcion para recoger un unico usuario
  * @param {string} idUser
  * @return {string} Devuelve un usuario
  */
-function getUser(idUser) {
-  return admin
+async function getUserWithoutCache(idUser) {
+  return await admin
       .firestore()
       .collection("users")
       .doc(idUser)
