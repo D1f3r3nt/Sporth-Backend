@@ -2,10 +2,12 @@
 const functions = require("firebase-functions");
 // The Firebase Admin SDK to access Firestore.
 const admin = require("firebase-admin");
-
+// Redis for cache
+const {createClient} = require("redis");
+// The Firebase Storage
 const {Storage} = require("@google-cloud/storage");
-const storage = new Storage();
 
+const storage = new Storage();
 admin.initializeApp();
 
 // ==========
@@ -453,13 +455,59 @@ async function getEvent(idEvent) {
   return evento;
 }
 
+// Pasword ;>5p+a^7-GSTaNm
+
+/**
+ * Funcion para recoger un unico usuario
+ * @param {string} idUser
+ * @return {Object} Devuelve un usuario
+ */
+async function getUser(idUser) {
+  const redisClient = createClient({
+    username: "sporth-back",
+    password: ";>5p+a^7-GSTaNm",
+    socket: {
+      host: "redis-13201.c61.us-east-1-3.ec2.cloud.redislabs.com",
+      port: 13201,
+    },
+  });
+
+  let result;
+
+  // On error in redis
+  redisClient.on("error", (err) =>
+    functions.logger.log(`Error al obtener resultados de la caché: ${err}`));
+
+  // Initialize redis
+  await redisClient.connect();
+
+  // Verificar si los resultados están en caché
+  const cachedResults = await redisClient.get(idUser);
+
+  if (cachedResults) {
+    // Resultados de la caché
+    result = cachedResults;
+  } else {
+    // Realizar operación o consulta costosa
+    const results = await getUserWithoutCache(idUser);
+
+    // Caché por un tiempo determinado, 5 minutos
+    await redisClient.set(idUser, JSON.stringify(results));
+    await redisClient.expireAt(idUser, parseInt((Date.now())/1000) + 300);
+
+    result = results;
+  }
+
+  return JSON.parse(result);
+}
+
 /**
  * Funcion para recoger un unico usuario
  * @param {string} idUser
  * @return {string} Devuelve un usuario
  */
-function getUser(idUser) {
-  return admin
+async function getUserWithoutCache(idUser) {
+  return await admin
       .firestore()
       .collection("users")
       .doc(idUser)
