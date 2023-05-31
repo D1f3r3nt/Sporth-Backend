@@ -486,7 +486,7 @@ async function getUser(idUser) {
 
   if (cachedResults) {
     // Resultados de la caché
-    result = cachedResults;
+    result = JSON.parse(cachedResults);
   } else {
     // Realizar operación o consulta costosa
     const results = await getUserWithoutCache(idUser);
@@ -498,13 +498,13 @@ async function getUser(idUser) {
     result = results;
   }
 
-  return JSON.parse(result);
+  return result;
 }
 
 /**
  * Funcion para recoger un unico usuario
  * @param {string} idUser
- * @return {string} Devuelve un usuario
+ * @return {object} Devuelve un usuario
  */
 async function getUserWithoutCache(idUser) {
   return await admin
